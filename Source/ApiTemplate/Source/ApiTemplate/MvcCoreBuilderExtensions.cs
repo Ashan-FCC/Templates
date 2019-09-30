@@ -1,7 +1,7 @@
 namespace ApiTemplate
 {
     using System.Linq;
-#if (CORS)
+#if CORS
     using ApiTemplate.Constants;
 #endif
     using ApiTemplate.Options;
@@ -14,7 +14,7 @@ namespace ApiTemplate
 
     public static class MvcCoreBuilderExtensions
     {
-#if (CORS)
+#if CORS
         /// <summary>
         /// Add cross-origin resource sharing (CORS) services and configures named CORS policies. See
         /// https://docs.asp.net/en/latest/security/cors.html
@@ -22,7 +22,6 @@ namespace ApiTemplate
         public static IMvcCoreBuilder AddCustomCors(this IMvcCoreBuilder builder) =>
             builder.AddCors(
                 options =>
-                {
                     // Create named CORS policies here which you can consume using application.UseCors("PolicyName")
                     // or a [EnableCors("PolicyName")] attribute on your controller or action.
                     options.AddPolicy(
@@ -30,8 +29,7 @@ namespace ApiTemplate
                         x => x
                             .AllowAnyOrigin()
                             .AllowAnyMethod()
-                            .AllowAnyHeader());
-                });
+                            .AllowAnyHeader()));
 
 #endif
         /// <summary>
@@ -57,9 +55,7 @@ namespace ApiTemplate
                     options.SerializerSettings.Converters.Add(new StringEnumConverter());
                 });
 
-        public static IMvcCoreBuilder AddCustomMvcOptions(
-            this IMvcCoreBuilder builder,
-            IHostingEnvironment hostingEnvironment) =>
+        public static IMvcCoreBuilder AddCustomMvcOptions(this IMvcCoreBuilder builder) =>
             builder.AddMvcOptions(
                 options =>
                 {

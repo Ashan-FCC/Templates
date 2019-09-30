@@ -4,10 +4,13 @@ namespace OrleansTemplate.Server
     using System.IO;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Options;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
     using Orleans;
     using Orleans.Configuration;
     using Orleans.Hosting;
@@ -28,15 +31,34 @@ namespace OrleansTemplate.Server
 
             try
             {
-                Log.Information("Starting application.");
+                Log.Information("Starting application");
                 await siloHost.StartAsync();
-                Log.Information("Started application");
+                Log.Information("Started application, press CTRL+C to exit");
 
-                Console.Read();
+                var siloStopped = new ManualResetEvent(false);
+                void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+                {
+                    Console.CancelKeyPress -= OnCancelKeyPress; // Remove handler to stop listening to CTRL+C events.
+                    e.Cancel = true;                            // Prevent the application from crashing ungracefully.
+                    Task.Run(async () =>                        // Shutdown gracefully on a background thread.
+                    {
+                        try
+                        {
+                            Log.Information("Stopping application");
+                            await siloHost.StopAsync();
+                            Log.Information("Stopped application");
 
-                Log.Information("Stopping application");
-                await siloHost.StopAsync();
-                Log.Information("Stopped application");
+                            siloStopped.Set();
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Fatal(exception, "Application stopped ungracefully");
+                        }
+                    });
+                }
+                Console.CancelKeyPress += OnCancelKeyPress;
+
+                siloStopped.WaitOne();
 
                 return 0;
             }
@@ -55,6 +77,8 @@ namespace OrleansTemplate.Server
         {
             StorageOptions storageOptions = null;
             return new SiloHostBuilder()
+                // Prevent the silo from automatically stopping itself when the cancel key is pressed.
+                .Configure<ProcessExitHandlingOptions>(options => options.FastKillOnProcessExit = false)
                 .ConfigureAppConfiguration(
                     (context, configurationBuilder) =>
                     {
@@ -67,7 +91,7 @@ namespace OrleansTemplate.Server
                         services.Configure<ApplicationOptions>(context.Configuration);
                         services.Configure<ClusterOptions>(context.Configuration.GetSection(nameof(ApplicationOptions.Cluster)));
                         services.Configure<StorageOptions>(context.Configuration.GetSection(nameof(ApplicationOptions.Storage)));
-#if (ApplicationInsights)
+#if ApplicationInsights
                         services.Configure<ApplicationInsightsTelemetryConsumerOptions>(
                             context.Configuration.GetSection(nameof(ApplicationOptions.ApplicationInsights)));
 #endif
@@ -80,7 +104,7 @@ namespace OrleansTemplate.Server
                     EndpointOptions.DEFAULT_GATEWAY_PORT,
                     listenOnAnyHostAddress: !IsRunningInDevelopment())
                 .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences())
-#if (ApplicationInsights)
+#if ApplicationInsights
                 .AddApplicationInsightsTelemetryConsumer()
 #endif
                 .ConfigureLogging(logging => logging.AddSerilog())
@@ -88,13 +112,21 @@ namespace OrleansTemplate.Server
                     options =>
                     {
                         options.ConnectionString = storageOptions.ConnectionString;
+                        options.ConfigureJsonSerializerSettings = ConfigureJsonSerializerSettings;
                         options.UseJson = true;
                     })
                 .UseAzureTableReminderService(options => options.ConnectionString = storageOptions.ConnectionString)
                 .UseTransactions(withStatisticsReporter: true)
                 .AddAzureTableTransactionalStateStorageAsDefault(options => options.ConnectionString = storageOptions.ConnectionString)
                 .AddSimpleMessageStreamProvider(StreamProviderName.Default)
-                .AddAzureTableGrainStorage("PubSubStore", options => options.ConnectionString = storageOptions.ConnectionString)
+                .AddAzureTableGrainStorage(
+                    "PubSubStore",
+                    options =>
+                    {
+                        options.ConnectionString = storageOptions.ConnectionString;
+                        options.ConfigureJsonSerializerSettings = ConfigureJsonSerializerSettings;
+                        options.UseJson = true;
+                    })
                 .UseIf(
                     RuntimeInformation.IsOSPlatform(OSPlatform.Linux),
                     x => x.UseLinuxEnvironmentStatistics())
@@ -139,6 +171,12 @@ namespace OrleansTemplate.Server
                 .Enrich.WithProperty("Application", GetAssemblyProductName())
                 .Enrich.With(new TraceIdEnricher())
                 .CreateLogger();
+
+        private static void ConfigureJsonSerializerSettings(JsonSerializerSettings jsonSerializerSettings)
+        {
+            jsonSerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            jsonSerializerSettings.DateParseHandling = DateParseHandling.DateTimeOffset;
+        }
 
         private static bool IsRunningInDevelopment() =>
             string.Equals(GetEnvironmentName(), EnvironmentName.Development, StringComparison.Ordinal);

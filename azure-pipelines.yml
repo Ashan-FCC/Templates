@@ -31,18 +31,21 @@ stages:
           vmImageName: windows-latest
     pool:
       vmImage: $(vmImageName)
-    timeoutInMinutes: 10
+    timeoutInMinutes: 20
     steps:
     - task: UseDotNet@2
       displayName: 'Install .NET Core SDK'
       inputs:
         packageType: 'sdk'
-        version: '2.2.301'
-    - script: 'dotnet tool install --global Cake.Tool'
+        version: '2.2.402'
+    - script: 'dotnet tool install --global Cake.Tool --version 0.35.0-alpha0029 --add-source https://pkgs.dev.azure.com/cake-build/Cake/_packaging/cake/nuget/v3/index.json'
       displayName: 'Install Cake Tool'
       failOnStderr: true
     - script: 'dotnet cake --target=Build'
       displayName: 'Dotnet Cake Build'
+      failOnStderr: true
+    - script: 'dotnet cake --target=InstallDeveloperCertificate'
+      displayName: 'Dotnet Cake InstallDeveloperCertificate'
       failOnStderr: true
     - script: 'dotnet cake --target=Test'
       displayName: 'Dotnet Cake Test'
@@ -65,7 +68,7 @@ stages:
   - deployment: AzureArtifacts
     displayName: 'Azure Artifacts'
     pool:
-      vmImage: ubuntu-latest
+      vmImage: windows-latest
     environment: 'Azure Artifacts'
     strategy:
       runOnce:
@@ -78,21 +81,18 @@ stages:
               nuGetFeedType: internal
               packagesToPush: '$(Agent.BuildDirectory)/Windows/*.nupkg'
               publishVstsFeed: dotnet-boxed
-              allowPackageConflicts: true
+              allowPackageConflicts: true # Only works on Windows
   - deployment: NuGet
     pool:
       vmImage: ubuntu-latest
     environment: 'NuGet'
-    condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
+    condition: startsWith(variables['Build.sourceBranch'], 'refs/tags/')
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: NuGetCommand@2
+          - task: NuGetToolInstaller@1
+            displayName: 'Install NuGet'
+          - script: nuget push $(Agent.BuildDirectory)/Windows/*.nupkg -Source https://api.nuget.org/v3/index.json -ApiKey $(NuGetApiKey) -SkipDuplicate
             displayName: 'NuGet Push'
-            inputs:
-              command: push
-              nuGetFeedType: external
-              packagesToPush: '$(Agent.BuildDirectory)/Windows/*.nupkg'
-              publishFeedCredentials: NuGet
-              allowPackageConflicts: true
+            failOnStderr: true

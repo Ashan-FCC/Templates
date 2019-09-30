@@ -9,12 +9,13 @@ namespace Boxed.Templates.FunctionalTest
     using System.Threading.Tasks;
     using ApiTemplate.ViewModels;
     using Boxed.AspNetCore;
+    using Boxed.DotnetNewTest;
     using Xunit;
 
     public class ApiTemplateTest
     {
         public ApiTemplateTest() =>
-            TemplateAssert.DotnetNewInstall<ApiTemplateTest>("ApiTemplate.sln").Wait();
+            DotnetNew.InstallAsync<ApiTemplateTest>("ApiTemplate.sln").Wait();
 
         [Theory]
         [Trait("IsUsingDotnetRun", "false")]
@@ -24,14 +25,14 @@ namespace Boxed.Templates.FunctionalTest
         [InlineData("NoForwardedHeadersOrHostFiltering", "forwarded-headers=false", "host-filtering=false")]
         public async Task RestoreAndBuild_Default_Successful(string name, params string[] arguments)
         {
-            using (var tempDirectory = TemplateAssert.GetTempDirectory())
+            using (var tempDirectory = TempDirectory.NewTempDirectory())
             {
                 var dictionary = arguments
                     .Select(x => x.Split('=', StringSplitOptions.RemoveEmptyEntries))
                     .ToDictionary(x => x.First(), x => x.Last());
-                var project = await tempDirectory.DotnetNew("api", name, dictionary);
-                await project.DotnetRestore();
-                await project.DotnetBuild();
+                var project = await tempDirectory.DotnetNewAsync("api", name, dictionary);
+                await project.DotnetRestoreAsync();
+                await project.DotnetBuildAsync();
             }
         }
 
@@ -39,12 +40,12 @@ namespace Boxed.Templates.FunctionalTest
         [Trait("IsUsingDotnetRun", "true")]
         public async Task Run_Default_Successful()
         {
-            using (var tempDirectory = TemplateAssert.GetTempDirectory())
+            using (var tempDirectory = TempDirectory.NewTempDirectory())
             {
-                var project = await tempDirectory.DotnetNew("api", "Default");
-                await project.DotnetRestore();
-                await project.DotnetBuild();
-                await project.DotnetRun(
+                var project = await tempDirectory.DotnetNewAsync("api", "Default");
+                await project.DotnetRestoreAsync();
+                await project.DotnetBuildAsync();
+                await project.DotnetRunAsync(
                     @"Source\Default",
                     async (httpClient, httpsClient) =>
                     {
@@ -95,18 +96,18 @@ namespace Boxed.Templates.FunctionalTest
         [Trait("IsUsingDotnetRun", "true")]
         public async Task Run_HealthCheckFalse_Successful()
         {
-            using (var tempDirectory = TemplateAssert.GetTempDirectory())
+            using (var tempDirectory = TempDirectory.NewTempDirectory())
             {
-                var project = await tempDirectory.DotnetNew(
+                var project = await tempDirectory.DotnetNewAsync(
                     "api",
                     "HealthCheckFalse",
                     new Dictionary<string, string>()
                     {
                         { "health-check", "false" },
                     });
-                await project.DotnetRestore();
-                await project.DotnetBuild();
-                await project.DotnetRun(
+                await project.DotnetRestoreAsync();
+                await project.DotnetBuildAsync();
+                await project.DotnetRunAsync(
                     @"Source\HealthCheckFalse",
                     async httpClient =>
                     {
@@ -123,18 +124,18 @@ namespace Boxed.Templates.FunctionalTest
         [Trait("IsUsingDotnetRun", "true")]
         public async Task Run_HttpsEverywhereFalse_Successful()
         {
-            using (var tempDirectory = TemplateAssert.GetTempDirectory())
+            using (var tempDirectory = TempDirectory.NewTempDirectory())
             {
-                var project = await tempDirectory.DotnetNew(
+                var project = await tempDirectory.DotnetNewAsync(
                     "api",
                     "HttpsEverywhereFalse",
                     new Dictionary<string, string>()
                     {
                         { "https-everywhere", "false" },
                     });
-                await project.DotnetRestore();
-                await project.DotnetBuild();
-                await project.DotnetRun(
+                await project.DotnetRestoreAsync();
+                await project.DotnetBuildAsync();
+                await project.DotnetRunAsync(
                     @"Source\HttpsEverywhereFalse",
                     async httpClient =>
                     {
@@ -148,18 +149,18 @@ namespace Boxed.Templates.FunctionalTest
         [Trait("IsUsingDotnetRun", "true")]
         public async Task Run_SwaggerFalse_Successful()
         {
-            using (var tempDirectory = TemplateAssert.GetTempDirectory())
+            using (var tempDirectory = TempDirectory.NewTempDirectory())
             {
-                var project = await tempDirectory.DotnetNew(
+                var project = await tempDirectory.DotnetNewAsync(
                     "api",
                     "SwaggerFalse",
                     new Dictionary<string, string>()
                     {
                         { "swagger", "false" },
                     });
-                await project.DotnetRestore();
-                await project.DotnetBuild();
-                await project.DotnetRun(
+                await project.DotnetRestoreAsync();
+                await project.DotnetBuildAsync();
+                await project.DotnetRunAsync(
                     @"Source\SwaggerFalse",
                     async (httpClient, httpsClient) =>
                     {

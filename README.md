@@ -1,6 +1,6 @@
 ![.NET Boxed Banner](https://raw.githubusercontent.com/Dotnet-Boxed/Templates/master/Images/Banner.png)
 
- [![Boilerplate.Templates NuGet Package](https://img.shields.io/nuget/v/Boxed.Templates.svg)](https://www.nuget.org/packages/Boxed.Templates/)  [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/RehanSaeedUK) [![Twitter Follow](https://img.shields.io/twitter/follow/rehansaeeduk.svg?style=social&label=Follow)](https://twitter.com/RehanSaeedUK)
+ [![Boilerplate.Templates NuGet Package](https://img.shields.io/nuget/v/Boxed.Templates.svg)](https://www.nuget.org/packages/Boxed.Templates/) [![Boxed.Templates package in dotnet-boxed feed in Azure Artifacts](https://feeds.dev.azure.com/dotnet-boxed/_apis/public/Packaging/Feeds/03bd56a4-9269-43f7-9f75-d82037c56a46/Packages/d253caa8-4749-4cc9-892d-1342497a439e/Badge)](https://dev.azure.com/dotnet-boxed/Templates/_packaging?_a=package&feed=03bd56a4-9269-43f7-9f75-d82037c56a46&package=d253caa8-4749-4cc9-892d-1342497a439e&preferRelease=true) [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/RehanSaeedUK) [![Twitter Follow](https://img.shields.io/twitter/follow/rehansaeeduk.svg?style=social&label=Follow)](https://twitter.com/RehanSaeedUK)
 
 Project templates with batteries included, providing the minimum amount of code required to get you going.
 
@@ -24,10 +24,6 @@ Project templates with batteries included, providing the minimum amount of code 
 
 You can find release notes for each version [here](https://github.com/Dotnet-Boxed/Templates/releases) and a To-Do list of new features and enhancements coming soon in the [projects](https://github.com/Dotnet-Boxed/Templates/projects) tab.
 
-## Contributing
-
-Please read the [guide](https://github.com/Dotnet-Boxed/Templates/blob/master/CONTRIBUTING.md) to learn how you can make a contribution.
-
 ## Continuous Integration
 
 | Name            | Operating System | Status | History |
@@ -38,9 +34,9 @@ Please read the [guide](https://github.com/Dotnet-Boxed/Templates/blob/master/CO
 | Azure Pipelines | Overall          | [![Azure Pipelines Overall Build Status](https://dev.azure.com/dotnet-boxed/Templates/_apis/build/status/Dotnet-Boxed.Templates?branchName=master)](https://dev.azure.com/dotnet-boxed/Templates/_build/latest?definitionId=2&branchName=master) | |
 | AppVeyor        | Ubuntu & Windows | [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/munmh9if4vfeqy62?svg=true)](https://ci.appveyor.com/project/RehanSaeed/templates) | [![AppVeyor Build history](https://buildstats.info/appveyor/chart/RehanSaeed/Templates?branch=master&includeBuildsFromPullRequest=false)](https://ci.appveyor.com/project/RehanSaeed/Templates) |
 
-## Thanks
+## Contributions and Thanks
 
-A big thank you to the following contributors:
+Please view the [Contributing](CONTRIBUTING.md) guide for more information.
 
 - [tomecho](https://github.com/tomecho) - Fixing GraphQL Apollo Tracing.
 - [sayedihashimi](https://github.com/sayedihashimi) - Fixed dotnet new command in ReadMe.

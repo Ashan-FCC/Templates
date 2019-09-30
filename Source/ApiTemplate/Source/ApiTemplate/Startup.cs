@@ -1,15 +1,15 @@
 namespace ApiTemplate
 {
     using System;
-#if (CORS)
+#if CORS
     using ApiTemplate.Constants;
 #endif
     using Boxed.AspNetCore;
-#if (CorrelationId)
+#if CorrelationId
     using CorrelationId;
 #endif
     using Microsoft.AspNetCore.Builder;
-#if (HealthCheck)
+#if HealthCheck
     using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 #endif
     using Microsoft.AspNetCore.Hosting;
@@ -22,7 +22,7 @@ namespace ApiTemplate
     /// <summary>
     /// The main start-up class for the application.
     /// </summary>
-    public class Startup : IStartup
+    public class Startup : StartupBase
     {
         private readonly IConfiguration configuration;
         private readonly IHostingEnvironment hostingEnvironment;
@@ -45,31 +45,31 @@ namespace ApiTemplate
         /// called by the ASP.NET runtime. See
         /// http://blogs.msdn.com/b/webdev/archive/2014/06/17/dependency-injection-in-asp-net-vnext.aspx
         /// </summary>
-        public IServiceProvider ConfigureServices(IServiceCollection services) =>
+        public override void ConfigureServices(IServiceCollection services) =>
             services
-#if (ApplicationInsights)
+#if ApplicationInsights
                 // Add Azure Application Insights data collection services to the services container.
                 .AddApplicationInsightsTelemetry(this.configuration)
 #endif
-#if (CorrelationId)
+#if CorrelationId
                 .AddCorrelationIdFluent()
 #endif
                 .AddCustomCaching()
                 .AddCustomOptions(this.configuration)
                 .AddCustomRouting()
-#if (ResponseCaching)
+#if ResponseCaching
                 .AddResponseCaching()
 #endif
-#if (ResponseCompression)
+#if ResponseCompression
                 .AddCustomResponseCompression()
 #endif
-#if (HttpsEverywhere)
+#if HttpsEverywhere
                 .AddCustomStrictTransportSecurity()
 #endif
-#if (HealthCheck)
+#if HealthCheck
                 .AddCustomHealthChecks()
 #endif
-#if (Swagger)
+#if Swagger
                 .AddCustomSwagger()
 #endif
                 .AddHttpContextAccessor()
@@ -79,10 +79,10 @@ namespace ApiTemplate
                 .AddScoped(x => x
                     .GetRequiredService<IUrlHelperFactory>()
                     .GetUrlHelper(x.GetRequiredService<IActionContextAccessor>().ActionContext))
-#if (Versioning)
+#if Versioning
                 .AddCustomApiVersioning()
 #endif
-#if (Swagger && Versioning)
+#if Swagger && Versioning
                 .AddVersionedApiExplorer(x => x.GroupNameFormat = "'v'VVV") // Version format: 'v'major[.minor][-status]
 #endif
                 .AddMvcCore()
@@ -92,50 +92,49 @@ namespace ApiTemplate
                     .AddDataAnnotations()
                     .AddJsonFormatters()
                     .AddCustomJsonOptions(this.hostingEnvironment)
-#if (CORS)
+#if CORS
                     .AddCustomCors()
 #endif
-#if (DataContractSerializer)
+#if DataContractSerializer
                     // Adds the XML input and output formatter using the DataContractSerializer.
                     .AddXmlDataContractSerializerFormatters()
-#elif (XmlSerializer)
+#elif XmlSerializer
                     // Adds the XML input and output formatter using the XmlSerializer.
                     .AddXmlSerializerFormatters()
 #endif
-                    .AddCustomMvcOptions(this.hostingEnvironment)
+                    .AddCustomMvcOptions()
                 .Services
                 .AddProjectCommands()
                 .AddProjectMappers()
                 .AddProjectRepositories()
-                .AddProjectServices()
-                .BuildServiceProvider();
+                .AddProjectServices();
 
         /// <summary>
         /// Configures the application and HTTP request pipeline. Configure is called after ConfigureServices is
         /// called by the ASP.NET runtime.
         /// </summary>
-        public void Configure(IApplicationBuilder application) =>
+        public override void Configure(IApplicationBuilder application) =>
             application
-#if (CorrelationId)
+#if CorrelationId
                 // Pass a GUID in a X-Correlation-ID HTTP header to set the HttpContext.TraceIdentifier.
                 // UpdateTraceIdentifier must be false due to a bug. See https://github.com/aspnet/AspNetCore/issues/5144
                 .UseCorrelationId(new CorrelationIdOptions() { UpdateTraceIdentifier = false })
 #endif
-#if (ForwardedHeaders)
+#if ForwardedHeaders
                 .UseForwardedHeaders()
-#elif (HostFiltering)
+#elif HostFiltering
                 .UseHostFiltering()
 #endif
-#if (ResponseCaching)
+#if ResponseCaching
                 .UseResponseCaching()
 #endif
-#if (ResponseCompression)
+#if ResponseCompression
                 .UseResponseCompression()
 #endif
-#if (CORS)
+#if CORS
                 .UseCors(CorsPolicyName.AllowAny)
 #endif
-#if (HttpsEverywhere)
+#if HttpsEverywhere
                 .UseIf(
                     !this.hostingEnvironment.IsDevelopment(),
                     x => x.UseHsts())
@@ -143,18 +142,15 @@ namespace ApiTemplate
                 .UseIf(
                     this.hostingEnvironment.IsDevelopment(),
                     x => x.UseDeveloperErrorPages())
-#if (HealthCheck)
+#if HealthCheck
                 .UseHealthChecks("/status")
                 .UseHealthChecks("/status/self", new HealthCheckOptions() { Predicate = _ => false })
 #endif
                 .UseStaticFilesWithCacheControl()
-#if (Swagger)
+#if Swagger
                 .UseMvc()
-                .UseSwagger(
-                    options =>
-                    {
-                        options.PreSerializeFilters.Add((swaggerDoc, httpReq) => swaggerDoc.Host = httpReq.Host.Value);
-                    })
+                .UseSwagger(options => options.PreSerializeFilters.Add(
+                    (swaggerDoc, httpReq) => swaggerDoc.Host = httpReq.Host.Value))
                 .UseCustomSwaggerUI();
 #else
                 .UseMvc();
